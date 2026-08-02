@@ -1,6 +1,7 @@
-gradio
-spaces
 openai
 python-dotenv
+IPython
+gradio
+requests
+litellm
 chromadb
-pprint
