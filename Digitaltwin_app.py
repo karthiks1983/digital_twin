@@ -687,20 +687,21 @@ def respond_basic(message, history):
 
 # # Step 6: calling the Gradio interface with a launch greeting included
 
-
-greeting = respond_basic("Good morning!",[])
-gr.ChatInterface(
-    respond_basic, 
-    submit_btn="SUBMIT", 
-    stop_btn="STOP", 
-    chatbot=gr.Chatbot(
-    value=[
-      #  {"role": "user", "content": "Hello!"},
-        {"role": "assistant","content": greeting}
-    ]
-    ),
-    title="Digital Twin",
-    description="AI Digital Twin of Karthik Swaminathan"
-    ).launch(inbrowser= True)
+if __name__ == "__main__":
+    greeting = respond_basic("Good morning!",[])
+    gr.ChatInterface(
+        respond_basic, 
+        submit_btn="SUBMIT", 
+        stop_btn="STOP", 
+        chatbot=gr.Chatbot(
+        value=[
+        #     {"role": "user", "content": "Hello!"},
+            {"role": "assistant","content": greeting}
+        ]
+        ),
+        title="Digital Twin",
+        description="AI Digital Twin of Karthik Swaminathan"
+        ).launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
+        #(inbrowser= True)
 
 
