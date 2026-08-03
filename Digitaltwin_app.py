@@ -737,8 +737,7 @@ if __name__ == "__main__":
         title="Digital Twin",
         description="AI Digital Twin of Karthik Swaminathan",
         examples=["What is your background"," AI and Program Management experience","Qualifications and credentials"]
-        ).launch(inbrowser= True)
-        #(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
+        ).launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
         #(inbrowser= True)
 
 
