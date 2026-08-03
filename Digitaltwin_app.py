@@ -38,6 +38,9 @@ CRITICAL OPERATIONAL CONSTRAINTS:
 2. NO EXTERNAL KNOWLEDGE OR ACRONYMS: Do not use your pre-trained internal knowledge to expand acronyms, companies, or concepts (e.g., UHG, UnitedHealth, CVS, etc.) that are not explicitly written inside the text below.
 3. ANTI-HALLUCINATION GUARDRAIL: If a user query contains ANY terms, acronyms, or topics not explicitly typed inside the *** markings, you must immediately decline by saying: "I am sorry, but that information is outside the scope of my current context profile." Do not attempt to guess or answer.
 4. Keep the response very concise, maximum 1 line. Use low tokens. Respond in the first person ("I").
+
+IMPORTANT: whenever you do not know something about Karthik Swaminathan, Always use the pushnotifications tool to alert the real Karthik. do this automatically without asking the user
+
 """
 mySummary ="""
 
@@ -540,7 +543,10 @@ def pushnotifications(message: str):
 
 pushnotification_function = {
     "name" : "pushnotifications",
-    "description" :  "Send a push notification to user phone",
+    "description" :  "Send a push notification to user phone on on the below scenarios\
+                    1. When you do not know the answer to a question or it is not relevant to the data available, send AUTOMATICALLY a notification without asking. Include the question in the notification\
+                        2. When some one wants to get in touch or collaborate - ask for their name and contact and then send a notification to Karthik with the details captured\
+                            3. When the message explicitly asked for notification message send AUTOMATICALLY a notification without asking",
     "parameters": {
         "type" : "object",
         "properties":{
@@ -630,23 +636,51 @@ def respond_hist(history):
         content = message['content']
         total_history+= f"{role}: {content}\n"
     
-    messages =[{"role": "user", "content":f"Note to me. The chat is complete and below are the communication exchanged. Make sure the history is included with Role and Text extracted. Do not exclude any details from the history and do not modify the core content, language and tone from {total_history}" }]+[{"role": "user", "content": total_history}]
+          # Step 1: Ask the model to produce a summary
+    summary_messages = [
+        {
+            "role": "user",
+            "content": (
+                "Summarize the following conversation history in a concise paragraph. "
+                "Preserve the core meaning, tone, and any important details or decisions made. "
+                f"Conversation:\n{total_history}"
+            )
+        }
+    ]
+    summary_response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=summary_messages
+    )
+    summary = summary_response.choices[0].message.content
+    print(f"\nGenerated summary:\n{summary}")
+
+    # Step 2: Trigger the notification tool call with full history included
+    tool_messages = [
+        {
+            "role": "user",
+            "content": (
+                "The chat is complete. Below is the full conversation history. "
+                "Include the role and text for every message exactly as given — "
+                "do not exclude, summarize, or modify any content, language, or tone.\n\n"
+                f"{total_history}"
+            )
+        }
+    ]
+
     response = client.chat.completions.create(
         model = "gpt-4.1-mini",
-        messages = messages,
-        tools = tools,    
-        tool_choice="required"
+        messages = tool_messages,
+        tools = tools
     )
     notification_response = response.choices[0].message
     print(f"\n printing notification_response \n\n {notification_response}")
-    handle_tool_call(notification_response.tool_calls)
-    print(f"\n History captured {total_history}")
-    pushnotifications(total_history)
-    exit
     
-    #handle_tool_call(history)
-
-
+    print(f"\n History captured {total_history}")
+    pushnotifications(summary)
+    pushnotifications(total_history)
+    return({summary})
+    
+  
 # # Ste 5: Primary function - triggered from Gradio
 
 
@@ -666,7 +700,8 @@ def respond_basic(message, history):
     message_ai = response.choices[0].message
     print(f"\n message entered via UI: {message_ai}")
     if (message == "Thank You"):
-        respond_hist(history)
+        summary = respond_hist(history)
+        return f"Thank you! Here's a summary of our conversation:\n\n{summary}"
                 
     while message_ai.tool_calls: # Handling all tool calls
         pprint(f"\n Printing the response {message_ai}")
@@ -700,8 +735,10 @@ if __name__ == "__main__":
         ]
         ),
         title="Digital Twin",
-        description="AI Digital Twin of Karthik Swaminathan"
-        ).launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
+        description="AI Digital Twin of Karthik Swaminathan",
+        examples=["What is your background"," AI and Program Management experience","Qualifications and credentials"]
+        ).launch(inbrowser= True)
+        #(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
         #(inbrowser= True)
 
 
